@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Year 2026 - Rohit Mishra</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        :root { --pink: #ff0055; --gold: #ffd700; --neon-blue: #00f2ff; }
+        body { margin: 0; background: #000; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        
+        #setup-screen { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; position: absolute; width: 100%; z-index: 100;
+            background: radial-gradient(circle, #1a1a1a 0%, #000 100%);
+            transition: opacity 1s ease;
+        }
+        .glass-card { 
+            background: rgba(255, 255, 255, 0.03); padding: 40px; border-radius: 30px; 
+            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); 
+            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .input-box { 
+            width: 280px; padding: 15px; margin: 15px 0; border-radius: 12px; 
+            border: 2px solid var(--pink); background: rgba(0,0,0,0.6); color: #fff; 
+            font-size: 1rem; outline: none; transition: 0.3s;
+        }
+        .input-box:focus { border-color: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue); }
+        
+        #ui-layer { 
+            display: none; position: absolute; top: 30px; width: 100%; 
+            text-align: center; z-index: 50; pointer-events: none; 
+        }
+        #wishTitle { font-size: 2.5rem; text-shadow: 0 0 20px var(--pink); margin: 0; }
+        #wishMessage { font-size: 1.2rem; max-width: 600px; margin: 10px auto; line-height: 1.5; color: #ddd; }
+
+        .warning-blink { 
+            position: fixed; top:0; left:0; width:100vw; height:100vh;
+            background: #fff; color: red; animation: blink 0.15s infinite; 
+            display: flex; align-items: center; justify-content: center; 
+            text-align: center; font-size: 2rem; font-weight: 900; z-index: 200;
+        }
+        @keyframes blink { 50% { background: red; color: white; } }
+
+        button { 
+            padding: 15px 40px; background: linear-gradient(45deg, var(--pink), #ff00aa); 
+            color: white; border: none; border-radius: 12px; cursor: pointer; 
+            font-weight: bold; font-size: 1.1rem; box-shadow: 0 5px 20px rgba(255,0,85,0.4);
+            transition: 0.3s;
+        }
+        button:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(255,0,85,0.6); }
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen">
+        <div class="glass-card">
+            <h1 style="color: var(--pink); letter-spacing: 2px;">WELCOME TO 2026</h1>
+            <p style="opacity: 0.7;">Crafted by Rohit Mishra</p>
+            <input type="text" id="userName" placeholder="Your Beautiful Name" class="input-box">
+            <select id="relation" class="input-box">
+                <option value="friend">Best Friend 🍻</option>
+                <option value="family">Family ❤️</option>
+                <option value="colleague">Colleague 💼</option>
+                <option value="someonespecial">Someone Special 💍</option>
+            </select>
+            <br>
+            <button onclick="startExperience()">UNLOCK MAGIC ✨</button>
+        </div>
+    </div>
+
+    <div id="ui-layer">
+        <h1 id="wishTitle"></h1>
+        <p id="wishMessage"></p>
+        <h2 id="scoreDisplay" style="color: var(--gold); margin: 0;">Score: 0</h2>
+    </div>
+
+    <script>
+        const specialNames = ["madam", "ladyboss", "lady boss", "hfw"];
+        let scene, camera, renderer, raycaster, mouse, particleSystem;
+        let bubbles = [];
+        let score = 0;
+        let isSpecial = false;
+
+        function startExperience() {
+            const nameInput = document.getElementById('userName').value.trim();
+            const rel = document.getElementById('relation').value;
+            const name = nameInput.toLowerCase();
+
+            if (!nameInput) return alert("Please enter your name first!");
+
+            if (rel === 'someonespecial') {
+                if (!specialNames.includes(name)) {
+                    document.body.innerHTML = `<div class="warning-blink">😡 ACCESS DENIED!<br>Choose correct relation with Master Rohit!</div>`;
+                    return;
+                }
+                isSpecial = true;
+            }
+
+            setDetailedWish(nameInput, rel);
+            document.getElementById('setup-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('setup-screen').style.display = 'none';
+                document.getElementById('ui-layer').style.display = 'block';
+                initThreeJS();
+            }, 1000);
+        }
+
+        function setDetailedWish(name, rel) {
+            const title = document.getElementById('wishTitle');
+            const msg = document.getElementById('wishMessage');
+
+            if (rel === 'someonespecial') {
+                title.innerText = "Happy New Year, My Queen! 💖";
+                title.style.color = "#ff0055";
+                msg.innerText = `To the light of my life, ${name}. May 2026 be a year where every heartbeat of ours syncs in love. I promise to hold your hand through every sunset and sunrise. You are my forever wish come true.`;
+            } else if (rel === 'friend') {
+                title.innerText = `Happy 2026, Yaara! 🍻`;
+                title.style.color = "#00f2ff";
+                msg.innerText = `Hey ${name}, thanks for making the last year bearable! May this year bring you unlimited parties, zero hangovers, and the success you truly deserve. Let's make more epic memories!`;
+            } else if (rel === 'family') {
+                title.innerText = `Happy New Year, Dear Family! 🏡`;
+                title.style.color = "#ffd700";
+                msg.innerText = `Wishing you all infinite health and laughter. May our home always be filled with the warmth of togetherness in 2026. Thank you for being my constant strength.`;
+            } else {
+                title.innerText = `Success in 2026, ${name}! 🚀`;
+                title.style.color = "#ffffff";
+                msg.innerText = `Wishing you a professional year filled with promotions and breakthroughs. May your hard work turn into grand achievements this New Year!`;
+            }
+        }
+
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            
+            // Set Background Gradient Style
+            if (isSpecial) {
+                scene.background = new THREE.Color(0x1a0005);
+            } else {
+                scene.background = new THREE.Color(0x00051a);
+            }
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            // Chamak Dhamak Lights
+            const mainLight = new THREE.PointLight(0xffffff, 1, 100);
+            mainLight.position.set(5, 5, 10);
+            scene.add(mainLight);
+            
+            const ambient = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambient);
+
+            // Particle System (Hearts vs Sparkles)
+            const pCount = 1500;
+            const pGeo = new THREE.BufferGeometry();
+            const pPos = new Float32Array(pCount * 3);
+            for (let i = 0; i < pCount * 3; i++) {
+                pPos[i] = (Math.random() - 0.5) * 30;
+            }
+            pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+            
+            const pMat = new THREE.PointsMaterial({ 
+                color: isSpecial ? 0xff0055 : 0x00f2ff, 
+                size: 0.08,
+                transparent: true,
+                opacity: 0.6
+            });
+            particleSystem = new THREE.Points(pGeo, pMat);
+            scene.add(particleSystem);
+
+            camera.position.z = 10;
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+            window.addEventListener('click', onMouseClick);
+
+            spawnBubbles();
+            animate();
+        }
+
+        function spawnBubbles() {
+            const geometry = new THREE.SphereGeometry(0.7, 32, 32);
+            for (let i = 0; i < 7; i++) {
+                const material = new THREE.MeshStandardMaterial({
+                    color: isSpecial ? 0xff3377 : 0xffd700,
+                    emissive: isSpecial ? 0x220000 : 0x221100,
+                    metalness: 0.9,
+                    roughness: 0.1
+                });
+                const bubble = new THREE.Mesh(geometry, material);
+                resetBubble(bubble);
+                scene.add(bubble);
+                bubbles.push(bubble);
+            }
+        }
+
+        function resetBubble(bubble) {
+            bubble.position.x = (Math.random() - 0.5) * 15;
+            bubble.position.y = -8; 
+            bubble.position.z = (Math.random() - 0.5) * 5;
+            bubble.userData.speed = 0.03 + Math.random() * 0.08;
+            bubble.scale.set(1, 1, 1);
+        }
+
+        function onMouseClick(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(bubbles);
+
+            if (intersects.length > 0) {
+                const clicked = intersects[0].object;
+                score++;
+                document.getElementById('scoreDisplay').innerText = "Score: " + score;
+                
+                // Blast Confetti
+                confetti({
+                    particleCount: 80,
+                    spread: 60,
+                    origin: { x: event.clientX / window.innerWidth, y: event.clientY / window.innerHeight },
+                    colors: isSpecial ? ['#ff0055', '#ffffff', '#ff99aa'] : ['#ffd700', '#ffffff', '#00f2ff']
+                });
+
+                // Bubble Pop Animation
+                clicked.scale.set(0,0,0);
+                setTimeout(() => resetBubble(clicked), 200);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            particleSystem.rotation.y += 0.001;
+            particleSystem.position.y -= 0.01;
+            if(particleSystem.position.y < -5) particleSystem.position.y = 5;
+
+            bubbles.forEach(b => {
+                b.position.y += b.userData.speed;
+                b.rotation.x += 0.02;
+                b.rotation.z += 0.02;
+
+                if (b.position.y > 8) {
+                    resetBubble(b);
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
