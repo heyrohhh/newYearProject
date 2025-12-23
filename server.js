@@ -13,13 +13,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Database Pool
 
-const pool = mysql.createPool(process.env.DATABASE_URL || {
+const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     port: process.env.DB_PORT || 3306,
-    ssl: { rejectUnauthorized: false } // Required by most cloud providers
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    // ADD THIS LINE FOR CLOUD HOSTING:
+    ssl: { rejectUnauthorized: false } 
 });
 // Auto-create table on start
 const initDB = async () => {
